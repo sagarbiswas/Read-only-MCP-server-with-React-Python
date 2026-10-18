@@ -1,0 +1,52 @@
+services:
+  web:
+    build:
+      context: .
+    command: ["autosys-log-web"]
+    environment:
+      AUTOSYS_LOG_ROOT: /logs
+      AUTOSYS_WEB_HOST: 0.0.0.0
+      AUTOSYS_WEB_PORT: "8000"
+      AUTOSYS_WEB_ROOT: /app/frontend/dist
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - type: bind
+        # Previous UNC path: //server01/Log
+        source: ${AUTOSYS_LOG_HOST_PATH:-F:/logs}
+        target: /logs
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  mcp:
+    build:
+      context: .
+    command: ["autosys-log-mcp"]
+    environment:
+      AUTOSYS_LOG_ROOT: /logs
+      MCP_TRANSPORT: streamable-http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8001"
+    ports:
+      - "127.0.0.1:8001:8001"
+    volumes:
+      - type: bind
+        # Previous UNC path: //server01/Log
+        source: ${AUTOSYS_LOG_HOST_PATH:-F:/logs}
+        target: /logs
+        read_only: true
+        bind:
+          create_host_path: false
+    restart: unless-stopped
